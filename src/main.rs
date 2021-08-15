@@ -1,13 +1,11 @@
 use std::collections::HashMap;
-// to find ~/.config
-use std::env::var;
 // for reading dir and filename manipulation
 use std::fs;
 use std::path::PathBuf;
 // to spawn a new process
 use std::process::Command;
 
-use menu::{ask,terminate};
+use menu::{get_conf_dir,ask,terminate};
 
 use itertools::Itertools;
 use inflector::Inflector;
@@ -50,21 +48,6 @@ fn list_dir(dir: &str) -> Vec<PathBuf> {
         files.push(path)
     }
     files
-}
-
-fn get_conf_dir() -> String {
-    let foo = match var("XDG_CONFIG_DIR") {
-        Err(_) => match var("HOME") {
-            Err(_) => panic!("No home?"),
-            Ok(i) => format!("{}/.config/dmenu", i)
-        }
-        Ok(i) => format!("{}/dmenu", i)
-    };
-    match fs::create_dir_all(&foo) {
-        Err(why) => panic!("Couldn't create {}: {}", &foo, why),
-        Ok(_) => ()
-    };
-    foo
 }
 
 fn pretty(path: &PathBuf) -> String {

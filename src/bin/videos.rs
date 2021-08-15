@@ -17,8 +17,6 @@ use itertools::Itertools;
 // Regular expressions
 use regex;
 
-const VIDEOS: &str = "/home/davide/Videos/";
-const WATCHED: &str = "/home/davide/Videos/watched.json";
 const VIDEOS_EXT: [&str; 3] = ["mp4", "mkv", "webm"];
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -52,7 +50,7 @@ fn main() {
 
 fn menu() {
     // Get playlists
-    let mut map = load_watched(WATCHED);
+    let mut map = load_watched(&get_watched_path());
     // Ask the user
     let choice = match menu::ask(map.keys().sorted()) {
         Err(why) => menu::terminate(why),
@@ -77,7 +75,7 @@ fn menu() {
     play_pl(pl);
     // println!("{:#?}", pl);
     // println!("{:#?}", map);
-    write_watched(&map, WATCHED);
+    write_watched(&map, &get_watched_path());
 }
 
 fn if_next(pl: &Playlist) -> bool {
@@ -133,8 +131,8 @@ fn play(path: &str) {
 //// Refresh subroutine
 
 fn refresh() {
-    let old = load_watched(WATCHED);
-    let dirs = list_dirs(VIDEOS);
+    let old = load_watched(&get_watched_path());
+    let dirs = list_dirs(&get_videos_path());
     let mut new = HashMap::new();
     for dir in dirs.iter() {
         let title = pretty(dir);
@@ -150,7 +148,7 @@ fn refresh() {
         };
         new.insert(title, p);
     };
-    write_watched(&new, WATCHED)
+    write_watched(&new, &get_watched_path())
 }
 
 //// IO Handling
@@ -259,4 +257,15 @@ fn warn_invalid(choice: impl Debug) {
         Err(why) => menu::terminate(why),
         Ok(_) => ()
     };
+}
+
+fn get_videos_path() -> String {
+    let home = env::var("HOME").unwrap();
+    let path: PathBuf = [ &home, "Videos" ].iter().collect();
+    path.to_str().unwrap().to_string()
+}
+fn get_watched_path() -> String {
+    let v = get_videos_path();
+    let path: PathBuf = [ &v, "watched.json" ].iter().collect();
+    path.to_str().unwrap().to_string()
 }

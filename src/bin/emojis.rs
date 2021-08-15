@@ -1,20 +1,17 @@
 use std::collections::HashMap;
 // file processing
 use std::fs::{self,File};
+use std::path::PathBuf;
 // Run command
 use std::env::args;
 use std::process::Command;
 // Local
-use menu::{terminate,ask};
+use menu::{get_conf_dir,terminate,ask};
 // JSON
 use serde::{Serialize,Deserialize};
 use serde_json as json;
 
 use itertools::Itertools;
-
-//// Constants
-// PATH is the path to a json file that contains a dictionary {emoji:description}
-const PATH: &str = "/home/davide/.config/local/emoji.json";
 
 fn main() {
     let argv: Vec<String> = args().collect();
@@ -23,6 +20,7 @@ fn main() {
         2 => match argv[1].as_str() {
             "dmenu" => dmenu(),
             "refresh" => refresh(),
+            "used" => most_used(),
             a => terminate(format!("Option not recognized: {}", a)),
         },
         3 => {
@@ -41,7 +39,7 @@ fn main() {
 
 //// Subroutines
 fn dmenu() {
-    let mut emojis = match Emojis::from(PATH) {
+    let mut emojis = match Emojis::from(&get_path()) {
         Err(why) => terminate(why),
         Ok(e) => e
     };
@@ -49,18 +47,26 @@ fn dmenu() {
 }
 
 fn refresh() {
-    let mut emojis = match Emojis::from(PATH) {
+    let mut emojis = match Emojis::from(&get_path()) {
         Err(why) => terminate(why),
         Ok(e) => e
     };
     emojis.refresh();
-    if let Err(why) = emojis.save(PATH) {
+    if let Err(why) = emojis.save(&get_path()) {
         terminate(why)
     }
 }
 
+fn most_used() {
+    let emojis = match Emojis::from(&get_path()) {
+        Err(why) => terminate(why),
+        Ok(e) => e
+    };
+    emojis.most_used();
+}
+
 fn update(src: &str) {
-    let mut emojis = match Emojis::from(PATH) {
+    let mut emojis = match Emojis::from(&get_path()) {
         Err(why) => terminate(why),
         Ok(e) => e
     };
@@ -101,6 +107,17 @@ impl Emojis {
             Ok(d) => Ok(d),
         }
     }
+    // Print most used
+    fn most_used(&self) {
+        let iter = self.most_used.iter()
+            .sorted_by(|j,i| Ord::cmp(i.1, j.1))
+            .enumerate()
+            .filter( |x| x.0 < 10 )
+            .map( |x| x.1 );
+        for (k,i) in iter {
+            println!("{}: {}", k, i)
+        }
+    }
     fn save(&self, path: &str) -> Result<(),String> {
         // Create file
         let f = match File::create(path) {
@@ -137,7 +154,7 @@ impl Emojis {
         let n = uses(&choice);
         self.most_used.insert(choice, n+1);
         // and save
-        if let Err(why) = self.save(PATH) {
+        if let Err(why) = self.save(&get_path()) {
             terminate(why)
         }
     }
@@ -147,7 +164,7 @@ impl Emojis {
             foo.insert(k.clone(), v.clone());
         }
         self.current = foo;
-        if let Err(why) = self.save(PATH) {
+        if let Err(why) = self.save(&get_path()) {
             terminate(why)
         }
     }
@@ -165,8 +182,16 @@ impl Emojis {
 
 
 fn write(emoji: &str) {
-    match Command::new("xdotool").args(&["type", emoji]).spawn() {
+    match Command::new("xdotool")
+        .args(&["type", emoji])
+        .spawn() {
         Err(why) => terminate(format!("Error typing the emoji: {}", why)),
         Ok(_) => (),
     }
+}
+
+fn get_path() -> String {
+    let conf = get_conf_dir();
+    let path: PathBuf = [ &conf, "emojis", "emojis.json" ].iter().collect();
+    path.to_str().unwrap().to_string()
 }

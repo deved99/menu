@@ -1,6 +1,8 @@
+use std::env::var;
+use std::fs;
 use std::fmt::{Display,Debug};
 use std::io::Write;
-use std::process::{Command, Child, Stdio, exit};
+use std::process::{Command, Child, Stdio};
 
 const DMENU: &str = "dmenu";
 
@@ -47,6 +49,22 @@ where T: IntoIterator<Item = U>,
 }
 
 pub fn terminate(s: impl Display) -> ! {
-    println!("{}", s);
-    exit(1)
+    println!("{}\n", s);
+    panic!("Terminate function")
 }
+
+pub fn get_conf_dir() -> String {
+    let foo = match var("XDG_CONFIG_DIR") {
+        Err(_) => match var("HOME") {
+            Err(_) => panic!("No home?"),
+            Ok(i) => format!("{}/.config/dmenu", i)
+        }
+        Ok(i) => format!("{}/dmenu", i)
+    };
+    match fs::create_dir_all(&foo) {
+        Err(why) => panic!("Couldn't create {}: {}", &foo, why),
+        Ok(_) => ()
+    };
+    foo
+}
+

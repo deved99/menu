@@ -1,9 +1,8 @@
 use std::fs;
+use std::path::PathBuf;
 use std::process::Command;
 
 use rand::{seq::SliceRandom, thread_rng};
-
-const SONGS: &str = "/home/davide/.config/mpd/songs.txt";
 
 fn main() {
     let songs = get_songs();
@@ -17,8 +16,9 @@ fn main() {
 }
 
 fn get_songs() -> String {
-    let bytes = match fs::read(SONGS) {
-        Err(why) => panic!("Error reading file {}: {}", SONGS, why),
+    let p = get_path();
+    let bytes = match fs::read(&p) {
+        Err(why) => panic!("Error reading file {}: {}", &p, why),
         Ok(s) => s
     };
     String::from_utf8(bytes).unwrap()
@@ -31,4 +31,10 @@ fn play(song: &str) {
             Err(why) => panic!("Error spawning song: {}", why),
             Ok(_) => ()
         }
+}
+
+fn get_path() -> String {
+    let conf = menu::get_conf_dir();
+    let path: PathBuf = [ &conf, "mpd", "songs.txt" ].iter().collect();
+    path.to_str().unwrap().to_string()
 }
