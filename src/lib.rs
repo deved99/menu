@@ -57,9 +57,9 @@ pub fn get_conf_dir() -> String {
     let foo = match var("XDG_CONFIG_DIR") {
         Err(_) => match var("HOME") {
             Err(_) => panic!("No home?"),
-            Ok(i) => format!("{}/.config/dmenu", i)
+            Ok(i) => format!("{}/.config", i)
         }
-        Ok(i) => format!("{}/dmenu", i)
+        Ok(i) => i
     };
     match fs::create_dir_all(&foo) {
         Err(why) => panic!("Couldn't create {}: {}", &foo, why),

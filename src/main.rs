@@ -11,7 +11,7 @@ use itertools::Itertools;
 use inflector::Inflector;
 
 fn main() {
-    let configs_dir = get_conf_dir();
+    let configs_dir = get_dmenu_dir();
     let files = list_dir(&configs_dir);
     let map: HashMap<String,&PathBuf> = files.iter()
         .map(|f| (pretty(&f), f))
@@ -32,6 +32,10 @@ fn main() {
         Err(why) => panic!("Error running {:?}: {}", choice, why),
         Ok(_) => ()
     }
+}
+
+fn get_dmenu_dir() -> String {
+    format!("{}/dmenu", get_conf_dir())
 }
 
 fn list_dir(dir: &str) -> Vec<PathBuf> {
