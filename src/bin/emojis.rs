@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use std::env::args;
 use std::process::Command;
 // Local
-use menu::{get_conf_dir,terminate,ask};
+use menu::{get_conf_dir,term,ask};
 // JSON
 use serde::{Serialize,Deserialize};
 use serde_json as json;
@@ -21,26 +21,23 @@ fn main() {
             "dmenu" => dmenu(),
             "refresh" => refresh(),
             "used" => most_used(),
-            a => terminate(format!("Option not recognized: {}", a)),
+            a => term!(format!("Option not recognized: {}", a)),
         },
         3 => {
-            let src = match argv.get(2) {
-                Some(s) => s,
-                None => terminate("Not enough args")
-            };
+            let src = argv.get(2).unwrap();
             match argv[1].as_str() {
                 "from" => update(src),
-                a => terminate(format!("Option not recognized: {}", a)),
+                a => term!(format!("Option not recognized: {}", a)),
             }
         },
-        _ => terminate( format!("Too manu arguments: {:?}", &argv) )
+        _ => term!( format!("Too manu arguments: {:?}", &argv) )
     }
 }
 
 //// Subroutines
 fn dmenu() {
     let mut emojis = match Emojis::from(&get_path()) {
-        Err(why) => terminate(why),
+        Err(why) => term!(why),
         Ok(e) => e
     };
     emojis.dmenu();
@@ -48,18 +45,18 @@ fn dmenu() {
 
 fn refresh() {
     let mut emojis = match Emojis::from(&get_path()) {
-        Err(why) => terminate(why),
+        Err(why) => term!(why),
         Ok(e) => e
     };
     emojis.refresh();
     if let Err(why) = emojis.save(&get_path()) {
-        terminate(why)
+        term!(why)
     }
 }
 
 fn most_used() {
     let emojis = match Emojis::from(&get_path()) {
-        Err(why) => terminate(why),
+        Err(why) => term!(why),
         Ok(e) => e
     };
     emojis.most_used();
@@ -67,13 +64,13 @@ fn most_used() {
 
 fn update(src: &str) {
     let mut emojis = match Emojis::from(&get_path()) {
-        Err(why) => terminate(why),
+        Err(why) => term!(why),
         Ok(e) => e
     };
     let text: Vec<String> = match fs::read(src) {
-        Err(why) => terminate(why),
+        Err(why) => term!(why),
         Ok(v) => match String::from_utf8(v) {
-            Err(why) => terminate(why),
+            Err(why) => term!(why),
             Ok(s) => s.split("\n")
                 .map(|s| s.to_string())
                 .collect()
@@ -96,7 +93,7 @@ impl Emojis {
     fn from(path: &str) -> Result<Self,String> {
         // Open file read-only
         let f = match File::open(path) {
-            Err(why) => panic!("File couldn't be opened: {}", why),
+            Err(why) => panic!("File {} couldn't be opened: {}", path, why),
             Ok(f) => f,
         };
         // Read file content to string
@@ -143,9 +140,9 @@ impl Emojis {
             // then map to displayed format
             .map(|(k,v)| format!("{}: {}", k, v));
         let choice = match ask(pretty) {
-            Err(why) => terminate(why),
+            Err(why) => term!(why),
             Ok(s) => match s.split(":").next() {
-                None => terminate("No emoji found"),
+                None => term!("No emoji found"),
                 Some(e) => e.to_string()
             }
         };
@@ -155,7 +152,7 @@ impl Emojis {
         self.most_used.insert(choice, n+1);
         // and save
         if let Err(why) = self.save(&get_path()) {
-            terminate(why)
+            term!(why)
         }
     }
     fn refresh(&mut self) {
@@ -165,7 +162,7 @@ impl Emojis {
         }
         self.current = foo;
         if let Err(why) = self.save(&get_path()) {
-            terminate(why)
+            term!(why)
         }
     }
     fn update_from_txt(&mut self, lines: Vec<String>) {
@@ -185,13 +182,13 @@ fn write(emoji: &str) {
     match Command::new("xdotool")
         .args(&["type", emoji])
         .spawn() {
-        Err(why) => terminate(format!("Error typing the emoji: {}", why)),
+        Err(why) => term!(format!("Error typing the emoji: {}", why)),
         Ok(_) => (),
     }
 }
 
 fn get_path() -> String {
     let conf = get_conf_dir();
-    let path: PathBuf = [ &conf, "emojis", "emojis.json" ].iter().collect();
+    let path: PathBuf = [ &conf, "local", "emoji.json" ].iter().collect();
     path.to_str().unwrap().to_string()
 }

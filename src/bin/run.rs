@@ -1,7 +1,11 @@
+// STD
 use std::env::var;
 use std::fs;
 use std::process::Command;
-
+// Local
+use menu::{term,ask};
+// External
+use shlex::split;
 
 fn main() {
     let path = match var("PATH") {
@@ -14,25 +18,18 @@ fn main() {
         bins.extend(foo);
     }
     bins.sort();
-    let c = match menu::ask(bins) {
-        Err(why) => menu::terminate(why),
+    let c = match ask(bins) {
+        Err(why) => term!(why),
         Ok(c) => c,
     };
-    let mut c_iter = c.split(" ");
-    let program = match c_iter.next() {
-        None => menu::terminate("No choice given"),
-        Some(i) => i
+    let v = match split(&c) {
+        None => term!("{}\nNot valid command", c),
+        Some(v) => v
     };
-    let mut args = Vec::new();
-    for a in c_iter {
-        args.push(a);
-    };
-    match Command::new(program)
-        .args(&args)
-        .spawn() {
-            Err(why) => println!("Error spawning {} with args {:?}: {}", program, args, why),
-            Ok(_) => ()
-        }
+    Command::new( &v[0] )
+        .args(&v[1..])
+        .spawn()
+        .unwrap();
 }
 
 fn read_path(path: &str) -> Vec<String> {
@@ -50,12 +47,12 @@ fn read_path(path: &str) -> Vec<String> {
             Ok(j) => {
                 let path = j.path();
                 let path_str = match path.file_stem() {
-                    None => "",
-                    Some(s) => match s.to_str() {
-                        None => "",
-                        Some(i) => i
-                    }
+                    None => continue,
+                    Some(s) => s.to_str().unwrap()
                 };
+                if path_str.starts_with(".") {
+                    continue
+                }
                 path_str.to_string()
             }
         };

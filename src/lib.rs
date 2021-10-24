@@ -3,6 +3,8 @@ use std::fs;
 use std::fmt::{Display,Debug};
 use std::io::Write;
 use std::process::{Command, Child, Stdio};
+// External crates
+pub use terminate::term;
 
 const DMENU: &str = "dmenu";
 
@@ -46,11 +48,6 @@ where T: IntoIterator<Item = U>,
         }
     }
     Ok(())
-}
-
-pub fn terminate(s: impl Display) -> ! {
-    println!("{}\n", s);
-    panic!("Terminate function")
 }
 
 pub fn get_conf_dir() -> String {

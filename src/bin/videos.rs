@@ -9,6 +9,8 @@ use std::path::PathBuf;
 // Exec commands, write/read stdin/stdout
 use std::process::Command;
 
+use menu::term;
+
 // JSON handling
 use serde::{Serialize, Deserialize};
 use serde_json as json;
@@ -53,7 +55,7 @@ fn menu() {
     let mut map = load_watched(&get_watched_path());
     // Ask the user
     let choice = match menu::ask(map.keys().sorted()) {
-        Err(why) => menu::terminate(why),
+        Err(why) => term!(why),
         Ok(s) => s
     };
     let pl = match map.get_mut(&choice) {
@@ -86,7 +88,7 @@ fn if_next(pl: &Playlist) -> bool {
             choices.insert(format!("Play next episode ({})", pl.ep+1), true);
             choices.insert(format!("Continue previous episode ({})", pl.ep), false);
             let c = match menu::ask(choices.keys().sorted()) {
-                Err(why) => menu::terminate(why),
+                Err(why) => term!(why),
                 Ok(s) => s
             };
             let choice = choices.get(&c);
@@ -254,7 +256,7 @@ fn array_has<T: std::cmp::PartialEq>(array: &[T], elem: &T) -> bool {
 fn warn_invalid(choice: impl Debug) {
     let s = format!("Invalid choice: {:?}", choice);
     match menu::ask(&[s]) {
-        Err(why) => menu::terminate(why),
+        Err(why) => term!(why),
         Ok(_) => ()
     };
 }

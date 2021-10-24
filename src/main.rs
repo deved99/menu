@@ -1,65 +1,78 @@
-use std::collections::HashMap;
-// for reading dir and filename manipulation
-use std::fs;
-use std::path::PathBuf;
+use std::env::set_current_dir;
+use std::fs::File;
 // to spawn a new process
 use std::process::Command;
-
-use menu::{get_conf_dir,ask,terminate};
-
-use itertools::Itertools;
-use inflector::Inflector;
+// Local
+use menu::{get_conf_dir,ask,term};
+// External
+use serde::Deserialize;
+use serde_json as json;
+use shlex::split;
 
 fn main() {
-    let configs_dir = get_dmenu_dir();
-    let files = list_dir(&configs_dir);
-    let map: HashMap<String,&PathBuf> = files.iter()
-        .map(|f| (pretty(&f), f))
-        .collect();
-    let choice_raw = match ask(map.keys().sorted()) {
-        Err(why) => terminate(why),
-        Ok(o) => o
-    };
-    let choice = match map.get(choice_raw.as_str()) {
-        None => {
-            println!("Choice invalid: {:?}", choice_raw);
-            return
-        },
-        Some(i) => i.to_str().unwrap()
-    };
-    let cmd = Command::new(&choice).spawn();
-    match cmd {
-        Err(why) => panic!("Error running {:?}: {}", choice, why),
-        Ok(_) => ()
-    }
+    set_current_dir( get_menu_dir() ).unwrap();
+    menu();
 }
 
-fn get_dmenu_dir() -> String {
-    format!("{}/dmenu", get_conf_dir())
-}
-
-fn list_dir(dir: &str) -> Vec<PathBuf> {
-    let files_raw = match fs::read_dir(dir) {
-        Err(why) => panic!("Error reading {}: {}", dir, why),
-        Ok(fs) => fs,
-    };
-    let mut files = Vec::new();
-    for f in files_raw {
-        let path = match &f {
-            Err(why) => panic!("Error iterating over {:?}: {}", f, why),
-            Ok(s) => s.path(),
-        };
-        files.push(path)
-    }
-    files
-}
-
-fn pretty(path: &PathBuf) -> String {
-    match path.file_stem() {
-        None => terminate( format!("{:?}: no stem?", path) ),
-        Some(i) => match i.to_str() {
-            None => terminate(format!("{:?} has no filename?", path)),
-            Some(s) => s.to_sentence_case(),
+fn menu() {
+    let items = load();
+    let s = ask( items.iter().map(|x| x.name()) )
+        .unwrap();
+    for i in items {
+        if i.name() == &s {
+            i.exec();
+            break
         }
     }
+}
+
+fn load() -> Vec<MenuItem> {
+    let r = match File::open("config.json") {
+        Err(why) => term!(why),
+        Ok(r) => r
+    };
+    match json::from_reader(r) {
+        Err(why) => term!(why),
+        Ok(j) => j
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum MenuItem {
+    Cmd { name: String, cmd: String },
+    Dir { name: String, dir: String }
+}
+impl MenuItem {
+    fn name(&self) -> &str {
+        use MenuItem::*;
+        match &self {
+            Cmd { name: n, .. } => &n,
+            Dir { name: n, .. } => &n
+        }
+    }
+    fn exec(&self) {
+        use MenuItem::*;
+        match &self {
+            Cmd { cmd: c, .. } => {
+                let v = match split(c) {
+                    None => term!("{}\nNot valid command", c),
+                    Some(v) => v
+                };
+                Command::new( &v[0] )
+                    .args(&v[1..])
+                    .spawn()
+                    .unwrap();
+            },
+            Dir { dir: d, .. } => {
+                set_current_dir(&d)
+                    .unwrap();
+                menu()
+            }
+        }
+    }
+}
+
+fn get_menu_dir() -> String {
+    format!("{}/menu", get_conf_dir())
 }
