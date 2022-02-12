@@ -18,6 +18,7 @@ fn main() {
         bins.extend(foo);
     }
     bins.sort();
+    bins.dedup();
     let c = match ask(bins) {
         Err(why) => term!(why),
         Ok(c) => c,
