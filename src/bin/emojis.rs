@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 // file processing
 use std::fs::{self,File};
+use std::io::Write;
 use std::path::PathBuf;
 // Run command
 use std::env::args;
-use std::process::Command;
+use std::process::{Command,Stdio};
 // Local
 use menu::{get_conf_dir,term,ask};
 // JSON
@@ -179,12 +180,19 @@ impl Emojis {
 
 
 fn write(emoji: &str) {
-    match Command::new("xdotool")
-        .args(&["type", emoji])
-        .spawn() {
-        Err(why) => term!(format!("Error typing the emoji: {}", why)),
-        Ok(_) => (),
+    let mut p = Command::new("xclip")
+        .stdin(Stdio::piped())
+        .args(&["-selection", "clipboard", "-i"])
+        .spawn().unwrap();
+    {
+        let stdin = p.stdin.as_mut().unwrap();
+        stdin.write_all(emoji.as_bytes()).unwrap();
     }
+    // Wait for copying, crash if problems
+    p.wait().unwrap();
+    Command::new("xdotool")
+        .args(&["key", "--clearmodifiers", "Shift+Insert"])
+        .status().unwrap();
 }
 
 fn get_path() -> String {

@@ -1,13 +1,11 @@
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
-use rand::{seq::SliceRandom, thread_rng};
 use menu::term;
 
 fn main() {
     let songs = get_songs();
-    let mut lines: Vec<&str> = songs.split("\n").collect();
-    lines.shuffle(&mut thread_rng());
+    let lines: Vec<&str> = songs.split("\n").collect();
     let choice = match menu::ask(lines) {
         Err(why) => term!(why),
         Ok(c) => c

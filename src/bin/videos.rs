@@ -125,7 +125,7 @@ fn play(path: &str) {
     match Command::new("openfile")
         .args(&[path])
         .spawn() {
-            Err(why) => panic!("Playing {} with mpv has failed: {}", path, why),
+            Err(why) => panic!("Playing {} with openfile has failed: {}", path, why),
             Ok(_) => ()
         };
 }
