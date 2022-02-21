@@ -7,7 +7,6 @@ use menu::{get_conf_dir,ask,term};
 // External
 use serde::Deserialize;
 use serde_json as json;
-use shlex::split;
 
 fn main() {
     set_current_dir( get_menu_dir() ).unwrap();
@@ -55,12 +54,8 @@ impl MenuItem {
         use MenuItem::*;
         match &self {
             Cmd { cmd: c, .. } => {
-                let v = match split(c) {
-                    None => term!("{}\nNot valid command", c),
-                    Some(v) => v
-                };
-                Command::new( &v[0] )
-                    .args(&v[1..])
+                Command::new("/bin/sh")
+                    .args( [ "-c", &c ] )
                     .spawn()
                     .unwrap();
             },

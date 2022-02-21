@@ -4,8 +4,6 @@ use std::fs;
 use std::process::Command;
 // Local
 use menu::{term,ask};
-// External
-use shlex::split;
 
 fn main() {
     let path = match var("PATH") {
@@ -23,12 +21,8 @@ fn main() {
         Err(why) => term!(why),
         Ok(c) => c,
     };
-    let v = match split(&c) {
-        None => term!("{}\nNot valid command", c),
-        Some(v) => v
-    };
-    Command::new( &v[0] )
-        .args(&v[1..])
+    Command::new("/bin/sh")
+        .args(&[ "-c", &c ])
         .spawn()
         .unwrap();
 }
