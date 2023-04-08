@@ -1,48 +1,41 @@
-use std::env::{set_current_dir,var};
+use std::env::{set_current_dir, var};
 use std::fs;
 use std::process::Command;
 
-use menu::{ask,term};
+use menu::{ask, Result, Error};
 
 fn main() {
-    set_current_dir( var("HOME").unwrap() )
-        .unwrap();
-    ask_files();
+    let home = var("HOME").expect("Failed to get home?");
+    set_current_dir(home).expect("Failed to cd $HOME?");
+    ask_files().unwrap();
 }
 
-fn ask_files() {
-    let c = ask( &get_files() ).unwrap();
+fn ask_files() -> Result<()> {
+    let files = get_files()?;
+    let c = ask(files)?;
     match set_current_dir(&c) {
         Err(_) => open(&c),
-        Ok(_) => ask_files()
+        Ok(_) => ask_files(),
     }
 }
 
-fn get_files() -> Vec<String> {
-    let mut v = Vec::new();
-    v.push("..".to_string());
+fn get_files() -> Result<Vec<String>> {
+    let mut v = vec![String::from("..")];
     // list files
-    let files = match fs::read_dir(".") {
-        Err(why) => term!(why),
-        Ok(i) => i
-    };
+    let files = fs::read_dir(".")?;
     for f in files {
         let f = f.unwrap();
-        let s = f.path()
-            .file_name().unwrap()
-            .to_str().unwrap()
-            .to_string();
-        if !s.starts_with(".") {
+        let s = f.path().file_name().unwrap().to_str().unwrap().to_string();
+        if !s.starts_with('.') {
             v.push(s)
         }
     }
     v.sort();
-    v
+    Ok(v)
 }
 
-fn open(c: &str) {
-    Command::new("openfile")
-        .arg(c)
-        .spawn()
-        .unwrap();
+fn open(c: &str) -> Result<()> {
+    Command::new("openfile").arg(c).spawn()
+        .map(|_| ())
+        .map_err(Error::from)
 }
