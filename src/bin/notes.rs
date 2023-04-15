@@ -4,11 +4,16 @@ use std::process::Command;
 
 use uuid::Uuid;
 
-use menu::{ask, get_home, Result, Error};
+use menu::{ask, get_home, Error, Result};
 
 fn main() -> Result<()> {
     let notes_dir = get_notes_dir();
-    let notes = read_path(&notes_dir)?;
+    let mut notes = read_path(&notes_dir)?;
+    notes.sort_by(|a, b| {
+        let a = a.split_once(' ').map(|(_, x)| x).unwrap_or(&a);
+        let b = b.split_once(' ').map(|(_, x)| x).unwrap_or(&b);
+        a.cmp(b)
+    });
     let mut note = ask(&notes)?;
     if !notes.contains(&note) {
         note = format!("{} {}.md", get_id(), note);
@@ -16,7 +21,6 @@ fn main() -> Result<()> {
     let fullpath_note = format!("{}/{}", &notes_dir, note);
     open(&fullpath_note)
 }
-
 
 fn open(path: &str) -> Result<()> {
     Command::new("alacritty")
