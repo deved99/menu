@@ -1,12 +1,11 @@
-use std::env::{set_current_dir, var};
+use std::env::set_current_dir;
 use std::fs;
 use std::process::Command;
 
-use menu::{ask, Result, Error};
+use menu::{ask, get_home, Error, Result};
 
 fn main() {
-    let home = var("HOME").expect("Failed to get home?");
-    set_current_dir(home).expect("Failed to cd $HOME?");
+    set_current_dir(get_home()).expect("Failed to cd $HOME?");
     ask_files().unwrap();
 }
 
@@ -35,7 +34,9 @@ fn get_files() -> Result<Vec<String>> {
 }
 
 fn open(c: &str) -> Result<()> {
-    Command::new("openfile").arg(c).spawn()
+    Command::new("openfile")
+        .arg(c)
+        .spawn()
         .map(|_| ())
         .map_err(Error::from)
 }

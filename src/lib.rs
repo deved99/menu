@@ -45,12 +45,15 @@ where
     Ok(())
 }
 
+pub fn get_home() -> String {
+    var("HOME").expect("No $HOME?")
+}
+
 pub fn get_conf_dir() -> String {
     match var("XDG_CONFIG_DIR") {
         Err(_) => {
-            let home = var("HOME").expect("No $HOME?");
-            format!("{}/.config", home)
-        },
+            format!("{}/.config", get_home())
+        }
         Ok(i) => i,
     }
 }

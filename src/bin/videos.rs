@@ -14,7 +14,7 @@ use itertools::Itertools;
 // JSON handling
 use serde::{Deserialize, Serialize};
 
-use menu::{Error, Result};
+use menu::{Error, Result, get_home};
 
 const VIDEOS_EXT: [&str; 3] = ["mp4", "mkv", "webm"];
 
@@ -221,7 +221,7 @@ fn warn_invalid(choice: impl Debug) -> Result<()> {
 }
 
 fn get_videos_path() -> PathBuf {
-    let home = env::var("HOME").expect("Failed getting $HOME?");
+    let home = get_home();
     Path::new(&home).join("Videos")
 }
 fn get_watched_path() -> PathBuf {
