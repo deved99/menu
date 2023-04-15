@@ -1,3 +1,3 @@
-fn main() {
-    menu::main().unwrap()
+fn main() -> menu::Result<()> {
+    menu::main()
 }

@@ -31,7 +31,7 @@ fn read_path(path: &str) -> Result<Vec<String>> {
     let mut ret = Vec::new();
     for i_maybe in raw {
         let path = i_maybe?.path();
-        let filename = path.file_stem().and_then(|x| x.to_str());
+        let filename = path.file_name().and_then(|x| x.to_str());
         match filename {
             // Ignore files that start with a .
             Some(a) if a.starts_with('.') => (),
