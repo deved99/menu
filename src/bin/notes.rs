@@ -14,12 +14,19 @@ fn main() -> Result<()> {
         let b = b.split_once(' ').map(|(_, x)| x).unwrap_or(b);
         a.cmp(b)
     });
-    let mut note = ask(&notes)?;
-    if !notes.contains(&note) {
-        note = format!("{} {}.md", get_id(), note);
-    }
+    let choice = ask(&notes)?;
+    let note = match notes.contains(&choice) {
+        true => choice,
+        false => to_filename(&choice)
+    };
     let fullpath_note = format!("{}/{}", &notes_dir, note);
     open(&fullpath_note)
+}
+
+fn to_filename(s: &str) -> String {
+    let s = s.to_lowercase()
+        .replace(' ', "_");
+    format!("{}-{}.md", get_id(), s)
 }
 
 fn open(path: &str) -> Result<()> {
