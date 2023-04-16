@@ -8,7 +8,7 @@ use menu::{ask, get_home, Error, Result};
 
 fn main() -> Result<()> {
     let notes_dir = get_notes_dir();
-    let mut notes = read_path(&notes_dir)?;
+    let mut notes = read_files(&notes_dir)?;
     notes.sort_by(|a, b| {
         let a = a.split_once(' ').map(|(_, x)| x).unwrap_or(&a);
         let b = b.split_once(' ').map(|(_, x)| x).unwrap_or(&b);
@@ -30,11 +30,14 @@ fn open(path: &str) -> Result<()> {
         .map_err(Error::from)
 }
 
-fn read_path(path: impl AsRef<Path>) -> Result<Vec<String>> {
+fn read_files(path: impl AsRef<Path>) -> Result<Vec<String>> {
     let raw = fs::read_dir(path)?;
     let mut ret = Vec::new();
     for i_maybe in raw {
         let path = i_maybe?.path();
+        if path.is_dir() {
+            continue
+        }
         let filename = path.file_name().and_then(|x| x.to_str());
         match filename {
             // Ignore files that start with a .
