@@ -7,10 +7,13 @@ pub enum Error {
     #[error("IO error: {0}")]
     IO(#[from] std::io::Error),
     #[error("Failed serializing to json: {0}")]
-    SerdeJson(#[from] serde_json::Error),
+    SerdeYaml(#[from] serde_yaml::Error),
     #[error("Error building regex: {0}")]
     Regex(#[from] regex::Error),
+
     // Application errors
+    #[error("Config not found: tried config.(json|yaml|yml)")]
+    ConfigNotFound,
     #[error("Stdin is none.")]
     NoneStdin,
     #[error("Empty result from dmenu.")]

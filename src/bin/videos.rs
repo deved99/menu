@@ -4,7 +4,6 @@ use std::env;
 use std::fmt::Debug;
 // File handling
 use std::fs;
-use std::io::Write;
 use std::path::Path;
 use std::path::PathBuf;
 // Exec commands, write/read stdin/stdout
@@ -70,7 +69,7 @@ fn menu() -> Result<()> {
     play_pl(pl)?;
     // println!("{:#?}", pl);
     // println!("{:#?}", map);
-    write_watched(&map, get_watched_path())?;
+    write_yaml(&map, get_watched_path())?;
     Ok(())
 }
 
@@ -141,7 +140,7 @@ fn refresh() -> Result<()> {
         };
         new.insert(title, p);
     }
-    write_watched(&new, get_watched_path())
+    write_yaml(&new, get_watched_path())
 }
 
 //// IO Handling
@@ -184,18 +183,12 @@ fn list_videos(path: &str) -> Vec<String> {
 
 fn load_watched(path: impl AsRef<Path>) -> Result<HashMap<String, Playlist>> {
     let f = fs::File::open(path)?;
-    serde_json::from_reader(f).map_err(Error::from)
+    serde_yaml::from_reader(f).map_err(Error::from)
 }
 
-fn write_watched(map: &HashMap<String, Playlist>, path: impl AsRef<Path>) -> Result<()> {
-    let json = serde_json::json!(map);
-    write_json(&json, path)
-}
-
-fn write_json(json: &serde_json::Value, path: impl AsRef<Path>) -> Result<()> {
-    let mut f = fs::File::create(path)?;
-    let s = format!("{:#}", json);
-    f.write_all(s.as_bytes())
+fn write_yaml(data: impl serde::Serialize, path: impl AsRef<Path>) -> Result<()> {
+    let f = fs::File::create(path)?;
+    serde_yaml::to_writer(f, &data)
         .map_err(Error::from)
         .map(|_| ())
 }

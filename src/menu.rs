@@ -1,5 +1,6 @@
 use std::env::set_current_dir;
 use std::fs::File;
+use std::path::Path;
 use std::process::Command;
 
 use serde::Deserialize;
@@ -23,9 +24,16 @@ fn menu() -> Result<()> {
     Ok(())
 }
 
+const PATHS: [&str; 3] = ["config.yaml", "config.yml", "config.json"];
 fn load() -> Result<Vec<MenuItem>> {
-    let r = File::open("config.json")?;
-    serde_json::from_reader(r).map_err(Error::from)
+    let path = PATHS
+        .iter()
+        .map(Path::new)
+        .filter(|x| x.exists())
+        .next()
+        .ok_or_else(|| Error::ConfigNotFound)?;
+    let r = File::open(path)?;
+    serde_yaml::from_reader(r).map_err(Error::from)
 }
 
 #[derive(Deserialize)]

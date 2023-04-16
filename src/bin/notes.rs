@@ -10,8 +10,8 @@ fn main() -> Result<()> {
     let notes_dir = get_notes_dir();
     let mut notes = read_path(&notes_dir)?;
     notes.sort_by(|a, b| {
-        let a = a.split_once(' ').map(|(_, x)| x).unwrap_or(&a);
-        let b = b.split_once(' ').map(|(_, x)| x).unwrap_or(&b);
+        let a = a.split_once(' ').map(|(_, x)| x).unwrap_or(a);
+        let b = b.split_once(' ').map(|(_, x)| x).unwrap_or(b);
         a.cmp(b)
     });
     let mut note = ask(&notes)?;
@@ -24,7 +24,7 @@ fn main() -> Result<()> {
 
 fn open(path: &str) -> Result<()> {
     Command::new("alacritty")
-        .args(&["-e", "nvim", path])
+        .args(["-e", "nvim", path])
         .spawn()
         .map(|_| ())
         .map_err(Error::from)
