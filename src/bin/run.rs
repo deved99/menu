@@ -3,55 +3,41 @@ use std::env::var;
 use std::fs;
 use std::process::Command;
 // Local
-use menu::{term,ask};
+use menu::{ask, Error, Result};
 
-fn main() {
-    let path = match var("PATH") {
-        Err(why) => panic!("Error getting $PATH: {}", why),
-        Ok(v) => v
-    };
-    let mut bins = Vec::new();
-    for p in path.split(":") {
-        let foo = read_path(p);
-        bins.extend(foo);
-    }
+fn main() -> Result<()> {
+    let path = var("PATH").expect("No $PATH?");
+    let mut bins: Vec<String> = path
+        .split(':')
+        .flat_map(|s| {
+            read_path(s).unwrap_or_else(|e| {
+                eprintln!("Error reading {}: {}", path, e);
+                Vec::new()
+            })
+        })
+        .collect();
     bins.sort();
     bins.dedup();
-    let c = match ask(bins) {
-        Err(why) => term!(why),
-        Ok(c) => c,
-    };
+    let c = ask(bins)?;
     Command::new("/bin/sh")
-        .args(&[ "-c", &c ])
+        .args(["-c", &c])
         .spawn()
-        .unwrap();
+        .map(|_| ())
+        .map_err(Error::from)
 }
 
-fn read_path(path: &str) -> Vec<String> {
-    let raw = match fs::read_dir(path) {
-        Err(why) => {
-            println!("Error getting files in folder {}: {}", path, why);
-            return Vec::new()
-        },
-        Ok(l) => l
-    };
+fn read_path(path: &str) -> Result<Vec<String>> {
+    let raw = fs::read_dir(path)?;
     let mut ret = Vec::new();
-    for i_opt in raw {
-        let i = match &i_opt {
-            Err(why) => panic!("Error iterating over {:?}: {}", i_opt, why),
-            Ok(j) => {
-                let path = j.path();
-                let path_str = match path.file_stem() {
-                    None => continue,
-                    Some(s) => s.to_str().unwrap()
-                };
-                if path_str.starts_with(".") {
-                    continue
-                }
-                path_str.to_string()
-            }
-        };
-        ret.push(i)
+    for i_maybe in raw {
+        let path = i_maybe?.path();
+        let filename = path.file_name().and_then(|x| x.to_str());
+        match filename {
+            // Ignore files that start with a .
+            Some(a) if a.starts_with('.') => (),
+            Some(a) => ret.push(a.to_string()),
+            None => (),
+        }
     }
-    ret
+    Ok(ret)
 }

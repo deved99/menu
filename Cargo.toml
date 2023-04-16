@@ -7,10 +7,13 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-terminate = { git = "https://github.com/deved99/terminate.git", branch = "main" }
 Inflector = "0.11.4"
 itertools = "0.10"
+thiserror = "1.0"
+
 rand = "0.8.4"
 regex = "1.5.4"
+
 serde = { version = "1", features=["derive"] }
 serde_json = "1"
+uuid = { version = "1.3.1", features=["v4", "fast-rng"]}
