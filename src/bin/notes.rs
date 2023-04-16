@@ -1,3 +1,4 @@
+use std::env::set_current_dir;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
@@ -8,7 +9,8 @@ use menu::{ask, get_home, Error, Result};
 
 fn main() -> Result<()> {
     let notes_dir = get_notes_dir();
-    let mut notes = read_files(&notes_dir)?;
+    set_current_dir(&notes_dir)?;
+    let mut notes = read_files(".")?;
     notes.sort_by(|a, b| {
         let a = a.split_once(' ').map(|(_, x)| x).unwrap_or(a);
         let b = b.split_once(' ').map(|(_, x)| x).unwrap_or(b);
@@ -19,7 +21,7 @@ fn main() -> Result<()> {
         true => choice,
         false => to_filename(&choice)
     };
-    let fullpath_note = format!("{}/{}", &notes_dir, note);
+    let fullpath_note = format!("{}", note);
     open(&fullpath_note)
 }
 
