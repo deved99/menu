@@ -1,3 +1,4 @@
+use std::env::set_current_dir;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
@@ -8,23 +9,31 @@ use menu::{ask, get_home, Error, Result};
 
 fn main() -> Result<()> {
     let notes_dir = get_notes_dir();
-    let mut notes = read_files(&notes_dir)?;
+    set_current_dir(notes_dir)?;
+    let mut notes = read_files(".")?;
     notes.sort_by(|a, b| {
-        let a = a.split_once(' ').map(|(_, x)| x).unwrap_or(&a);
-        let b = b.split_once(' ').map(|(_, x)| x).unwrap_or(&b);
+        let a = a.split_once(' ').map(|(_, x)| x).unwrap_or(a);
+        let b = b.split_once(' ').map(|(_, x)| x).unwrap_or(b);
         a.cmp(b)
     });
-    let mut note = ask(&notes)?;
-    if !notes.contains(&note) {
-        note = format!("{} {}.md", get_id(), note);
-    }
-    let fullpath_note = format!("{}/{}", &notes_dir, note);
+    let choice = ask(&notes)?;
+    let note = match notes.contains(&choice) {
+        true => choice,
+        false => to_filename(&choice)
+    };
+    let fullpath_note = note.to_string();
     open(&fullpath_note)
+}
+
+fn to_filename(s: &str) -> String {
+    let s = s.to_lowercase()
+        .replace(' ', "_");
+    format!("{}-{}.md", get_id(), s)
 }
 
 fn open(path: &str) -> Result<()> {
     Command::new("neovide")
-        .args(&["--multigrid", path])
+        .args(["--multigrid", path])
         .spawn()
         .map(|_| ())
         .map_err(Error::from)

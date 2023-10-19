@@ -10,7 +10,6 @@ use std::process::{Command, Stdio};
 use menu::{ask, get_conf_dir, Error, Result};
 // JSON
 use serde::{Deserialize, Serialize};
-use serde_json as json;
 
 use itertools::Itertools;
 
@@ -76,7 +75,7 @@ impl Emojis {
         // Open file read-only
         let f = File::open(path)?;
         // Read file content to string
-        json::from_reader(f).map_err(Error::from)
+        serde_yaml::from_reader(f).map_err(Error::from)
     }
     // Print most used
     fn most_used(&self) {
@@ -93,7 +92,7 @@ impl Emojis {
         // Create file
         let f = File::create(path)?;
         // Write to path
-        json::to_writer_pretty(f, &self)
+        serde_yaml::to_writer(f, &self)
             .map(|_| ())
             .map_err(Error::from)
     }
