@@ -23,8 +23,8 @@ fn main() -> Result<()> {
 }
 
 fn open(path: &str) -> Result<()> {
-    Command::new("alacritty")
-        .args(&["-e", "nvim", path])
+    Command::new("neovide")
+        .args(&["--multigrid", path])
         .spawn()
         .map(|_| ())
         .map_err(Error::from)
