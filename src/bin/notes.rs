@@ -32,8 +32,8 @@ fn to_filename(s: &str) -> String {
 }
 
 fn open(path: &str) -> Result<()> {
-    Command::new("neovide")
-        .args(["--multigrid", path])
+    Command::new("alacritty")
+        .args(["-e", "nvim", path])
         .spawn()
         .map(|_| ())
         .map_err(Error::from)
